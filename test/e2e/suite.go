@@ -72,7 +72,7 @@ func (o *orderedSuites) Register(name string, newSuite NewSuiteFunc) {
 }
 
 func (u *suites) Run(ctx context.Context, t *testing.T, testInstallation *TestInstallation) {
-	var testNames []string
+	testNames := make([]string, 0, len(u.suites))
 	for name := range u.suites {
 		testNames = append(testNames, name)
 	}
