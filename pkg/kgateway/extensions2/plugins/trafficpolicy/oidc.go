@@ -9,6 +9,9 @@ import (
 	"sync"
 	"time"
 
+	"bytes"
+	"io"
+
 	"github.com/avast/retry-go/v4"
 )
 
@@ -106,8 +109,26 @@ func (o *oidcProviderConfigDiscoverer) discover(issuerURI string) (*oidcProvider
 			return fmt.Errorf("error discovering OpenID provider config; unexpected status code %d", resp.StatusCode)
 
 		case http.StatusOK:
-			if err := json.NewDecoder(resp.Body).Decode(&cfg); err != nil {
-				return retry.Unrecoverable(fmt.Errorf("error decoding OpenID provider config: %w", err))
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return retry.Unrecoverable(fmt.Errorf(
+					"failed to read OpenID provider config response body: %w",
+					err,
+				))
+			}
+
+			if len(bytes.TrimSpace(body)) == 0 {
+				return retry.Unrecoverable(fmt.Errorf(
+					"OpenID provider config response was empty",
+				))
+			}
+
+			if err := json.Unmarshal(body, &cfg); err != nil {
+				return retry.Unrecoverable(fmt.Errorf(
+					"error decoding OpenID provider config: %w body=%q",
+					err,
+					string(body),
+				))
 			}
 
 		default:
