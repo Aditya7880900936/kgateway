@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -71,9 +72,14 @@ func (o *orderedSuites) Register(name string, newSuite NewSuiteFunc) {
 }
 
 func (u *suites) Run(ctx context.Context, t *testing.T, testInstallation *TestInstallation) {
-	// TODO(jbohanon) does some randomness need to be injected here to ensure they aren't run in the same order every time?
-	// from https://goplay.tools/snippet/A-qqQCWkFaZ it looks like maps are not stable, but tend toward stability.
-	for testName, newSuite := range u.suites {
+	var testNames []string
+	for name := range u.suites {
+		testNames = append(testNames, name)
+	}
+	sort.Strings(testNames)
+
+	for _, testName := range testNames {
+		newSuite := u.suites[testName]
 		t.Run(testName, func(t *testing.T) {
 			suite.Run(t, newSuite(ctx, testInstallation))
 		})
