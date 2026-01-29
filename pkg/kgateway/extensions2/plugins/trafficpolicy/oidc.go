@@ -124,10 +124,15 @@ func (o *oidcProviderConfigDiscoverer) discover(issuerURI string) (*oidcProvider
 			}
 
 			if err := json.Unmarshal(body, &cfg); err != nil {
+				bodyStr := string(body)
+				const maxLoggedBodyLen = 200
+				if len(bodyStr) > maxLoggedBodyLen {
+					bodyStr = bodyStr[:maxLoggedBodyLen] + "...[truncated]"
+				}
 				return retry.Unrecoverable(fmt.Errorf(
 					"error decoding OpenID provider config: %w body=%q",
 					err,
-					string(body),
+					bodyStr,
 				))
 			}
 
